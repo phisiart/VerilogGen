@@ -23,7 +23,7 @@ def p_dispatch_1(p):
     
 def p_dispatch_2(p):
     '''dispatch : IDENTIFIER'''
-    p[0] = (p[1], 0)
+    p[0] = (p[1], -1)
     
 def p_input(p):
     '''input : dispatch SEMICOLON'''
@@ -83,9 +83,9 @@ def p_assign(p):
     p[0] = (p[1], p[3])
     
 def p_error(p):
-    print 'error!'
+    print('error!')
 
 parser = yacc.yacc()
 
 if __name__ == '__main__':
-    print parser.parse(data)
+    print(parser.parse(data))

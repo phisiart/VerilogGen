@@ -5,7 +5,7 @@ _tabversion = '3.2'
 
 _lr_method = 'LALR'
 
-_lr_signature = '\xc9\xf2\xaf\xb2{\xe4\xd2:$J6\x00Q\x93\x7fW'
+_lr_signature = b'\xc9\xf2\xaf\xb2{\xe4\xd2:$J6\x00Q\x93\x7fW'
     
 _lr_action_items = {'RSQUARE':([15,],[19,]),'LBRACE':([2,],[3,]),'RBRACE':([24,25,30,37,],[29,-11,-10,-12,]),'SEMICOLON':([6,8,17,19,28,34,35,36,],[10,-5,20,-4,-14,-13,37,-15,]),'RULES':([16,18,20,21,],[-8,22,-9,-7,]),'ARROW':([26,28,34,36,],[32,-14,-13,-15,]),'EQUAL':([8,19,27,],[-5,-4,33,]),'NUMBER':([13,33,],[15,36,]),'COLON':([4,11,22,],[5,14,23,]),'LSQUARE':([8,],[13,]),'OUTPUT':([7,9,10,12,],[11,-3,-6,-2,]),'INPUT':([3,],[4,]),'IDENTIFIER':([0,5,7,9,10,12,14,16,18,20,21,23,24,25,30,31,32,37,],[2,8,8,-3,-6,-2,8,-8,8,-9,-7,8,8,-11,-10,8,8,-12,]),'COMMA':([26,28,34,35,36,],[31,-14,-13,31,-15,]),'$end':([1,29,],[0,-1,]),}
 
@@ -26,19 +26,19 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> program","S'",1,None,None,None),
-  ('program -> IDENTIFIER LBRACE INPUT COLON input_list OUTPUT COLON output_list RULES COLON rules_list RBRACE','program',12,'p_program','parse.py',9),
-  ('input_list -> input_list input','input_list',2,'p_input_list','parse.py',13),
-  ('input_list -> input','input_list',1,'p_input_list','parse.py',14),
-  ('dispatch -> IDENTIFIER LSQUARE NUMBER RSQUARE','dispatch',4,'p_dispatch_1','parse.py',21),
-  ('dispatch -> IDENTIFIER','dispatch',1,'p_dispatch_2','parse.py',25),
-  ('input -> dispatch SEMICOLON','input',2,'p_input','parse.py',29),
-  ('output_list -> output_list output','output_list',2,'p_output_list','parse.py',41),
-  ('output_list -> output','output_list',1,'p_output_list','parse.py',42),
-  ('output -> dispatch SEMICOLON','output',2,'p_output','parse.py',58),
-  ('rules_list -> rules_list rule','rules_list',2,'p_rules_list','parse.py',62),
-  ('rules_list -> rule','rules_list',1,'p_rules_list','parse.py',63),
-  ('rule -> spec ARROW spec SEMICOLON','rule',4,'p_rule','parse.py',70),
-  ('spec -> spec COMMA assign','spec',3,'p_spec','parse.py',74),
-  ('spec -> assign','spec',1,'p_spec','parse.py',75),
-  ('assign -> dispatch EQUAL NUMBER','assign',3,'p_assign','parse.py',82),
+  ('program -> IDENTIFIER LBRACE INPUT COLON input_list OUTPUT COLON output_list RULES COLON rules_list RBRACE','program',12,'p_program','/home/johnson/VerilogGen/parse.py',9),
+  ('input_list -> input_list input','input_list',2,'p_input_list','/home/johnson/VerilogGen/parse.py',13),
+  ('input_list -> input','input_list',1,'p_input_list','/home/johnson/VerilogGen/parse.py',14),
+  ('dispatch -> IDENTIFIER LSQUARE NUMBER RSQUARE','dispatch',4,'p_dispatch_1','/home/johnson/VerilogGen/parse.py',21),
+  ('dispatch -> IDENTIFIER','dispatch',1,'p_dispatch_2','/home/johnson/VerilogGen/parse.py',25),
+  ('input -> dispatch SEMICOLON','input',2,'p_input','/home/johnson/VerilogGen/parse.py',29),
+  ('output_list -> output_list output','output_list',2,'p_output_list','/home/johnson/VerilogGen/parse.py',41),
+  ('output_list -> output','output_list',1,'p_output_list','/home/johnson/VerilogGen/parse.py',42),
+  ('output -> dispatch SEMICOLON','output',2,'p_output','/home/johnson/VerilogGen/parse.py',58),
+  ('rules_list -> rules_list rule','rules_list',2,'p_rules_list','/home/johnson/VerilogGen/parse.py',62),
+  ('rules_list -> rule','rules_list',1,'p_rules_list','/home/johnson/VerilogGen/parse.py',63),
+  ('rule -> spec ARROW spec SEMICOLON','rule',4,'p_rule','/home/johnson/VerilogGen/parse.py',70),
+  ('spec -> spec COMMA assign','spec',3,'p_spec','/home/johnson/VerilogGen/parse.py',74),
+  ('spec -> assign','spec',1,'p_spec','/home/johnson/VerilogGen/parse.py',75),
+  ('assign -> dispatch EQUAL NUMBER','assign',3,'p_assign','/home/johnson/VerilogGen/parse.py',82),
 ]
