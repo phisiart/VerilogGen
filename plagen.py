@@ -1,240 +1,217 @@
 # -*- coding: utf-8 -*-
 
 import sys, os
-from parse import *
+from parser import *
 
-ast = parser.parse(data)
-#print ast
+if __name__ == '__main__':
 
-plastr = ''
+    # Read source file.
+    source_file_name = sys.argv[1]
+    source_file_handle = open(source_file_name, 'r')
+    source_code = source_file_handle.read()
+    source_file_handle.close()
 
-name = ast[1]
-print('Module name = %s' % name)
-print()
+    print('Source code:')
+    print('-' * 80)
+    print(source_code)
+    print('-' * 80 + '\n')
 
-inputs = {}
-plastr += '.ilb '
-for t_inputvar in ast[2]:
+    # Construct the abstract syntax tree.
+    ast = parser.parse(source_code)
 
-    if t_inputvar[1] == -1:
-        inputvar = (t_inputvar[0], 1)
-        plastr += inputvar[0] + ' '
-    else:
-        inputvar = t_inputvar
-        for offset in range(0, int(inputvar[1])):
-            plastr += inputvar[0] + '[' + str(offset) + ']' + ' '
+    # Get module name.
+    module_name = ast[1]
+    verilog_code = 'module ' + module_name + '(\n'
+    print('Module name = %s\n' % module_name)
 
-    if inputvar[0] in inputs:
-        print('Error! Input \'%s\' has already been defined.' % inputvar[0])
-        sys.exit(1)
+    # Recognize the inputs.
+    input_lens = {}
+    input2idx = {}
+    input_count = 0
+    pla = '.ilb '
+    print('The inputs are:')
+    for (input_name, input_len) in ast[2]:
+        if input_name in input_lens:
+            print('Error! Input \'%s\' has already been defined.' % input_name)
+            sys.exit(1)
 
-    inputs[inputvar[0]] = int(inputvar[1])
+        input2idx[input_name] = input_count
 
-print('Inputs are:')
-for t_input in inputs:
-    print('  %s[%d]' % (t_input, inputs[t_input]))
-print()
-
-outputs = {}
-plastr += '\n.ob '
-for t_outputvar in ast[3]:
-
-    if t_outputvar[1] == -1:
-        outputvar = (t_outputvar[0], 1)
-        plastr += outputvar[0] + ' '
-    else:
-        outputvar = t_outputvar
-        for offset in range(0, int(outputvar[1])):
-            plastr += outputvar[0] + '[' + str(offset) + ']' + ' '
-
-    if outputvar[0] in inputs:
-        print('Error! Trying to add output \'%s\' but it has already been defined as input.' % outputvar[0])
-        sys.exit(1)
-
-    if outputvar[0] in outputs:
-        print('Error! Output \'%s\' has already been defined.' % inputvar[0])
-        sys.exit(1)
-
-    outputs[outputvar[0]] = int(outputvar[1])
-
-print('Outputs are:')
-for t_output in outputs:
-    print('  %s[%d]' % (t_output, outputs[t_output]))
-print()
-
-input2idx = {}
-input_count = 0
-for t_input in inputs:
-    input2idx[t_input] = input_count
-    input_count += inputs[t_input]
-
-print('Input indices:')
-for t_input in input2idx:
-    print('  %s = %d' % (t_input, input2idx[t_input]))
-print()
-print('input_count = %d' % input_count)
-print()
-
-output2idx = {}
-output_count = 0
-for t_output in outputs:
-    output2idx[t_output] = output_count
-    output_count += outputs[t_output]
-
-print('Output indices:')
-for t_output in output2idx:
-    print('  %s = %d' % (t_output, output2idx[t_output]))
-print()
-print('input_count = %d' % output_count)
-print()
-
-plastr = '.i ' + str(input_count) + '\n.o ' + str(output_count) + '\n.type fr\n' + plastr
-
-
-class Rule:
-    def __init__(self):
-        self.inputs = {} # int : str
-        self.outputs = {} # int : str
-
-    def InputStr(self):
-        ret = ''
-        for idx in range(0, input_count):
-            if idx in self.inputs:
-                ret += str(self.inputs[idx])
-            else:
-                ret += '-'
-        return ret
-
-    def OutputStr(self):
-        ret = ''
-        for idx in range(0, output_count):
-            if idx in self.outputs:
-                ret += str(self.outputs[idx])
-            else:
-                ret += '-'
-        return ret
-
-rules = []
-
-for t_rule in ast[4]:
-    rule = Rule()
-
-    input_specs = t_rule[0]
-    print('Inputs:')
-    for input_spec in input_specs:
-        var, offset = input_spec[0]
-        val = input_spec[1]
-        print('  var = %s[%d], val = %s' % (var, offset, val))
-        if offset == -1:
-            print('    inputs[%s] = %d' % (var, inputs[var]))
-            for off in range(0, inputs[var]):
-                va = (int(val) & (1 << off)) >> off
-                idx = input2idx[var] + off
-                print('      idx = %d, var = %d' % (idx, va))
-                rule.inputs[idx] = va
-                # print(va)
-            # print()
+        if input_len == -1:
+            input_lens[input_name] = 1
+            input_count += 1
+            pla += input_name + ' '
+            verilog_code += '    input wire ' + input_name + ',\n'
         else:
-            idx = input2idx[var] + offset
-            # val = (int(val) & (1 << offset)) >> offset
-            val = int(val != 0)
-            rule.inputs[idx] = val
-            # print('  idx = %d, val = %d' % (idx, val))
-            # print(rule.inputs)
+            input_lens[input_name] = input_len
+            input_count += input_len
+            for offset in range(0, input_len):
+                pla += input_name + '[' + str(offset) + ']' + ' '
+            verilog_code += '    input wire [' + str(input_len - 1) + ':0] ' + input_name + ',\n'
 
-    output_specs = t_rule[1]
-    print('Outputs:')
-    for output_spec in output_specs:
-        var, offset = output_spec[0]
-        val = output_spec[1]
-        print('  var = %s[%d], val = %s' % (var, offset, val))
-        if offset == -1:
-            print('    outputs[%s] = %d' % (var, outputs[var]))
-            for off in range(0, outputs[var]):
-                va = (int(val) & (1 << off)) >> off
-                idx = output2idx[var] + off
-                print('      idx = %d, var = %d' % (idx, va))
-                rule.outputs[idx] = va
-                # print(va)
-            # print()
-        else:
-            idx = output2idx[var] + offset
-            val = int(val != 0)
-            rule.outputs[idx] = val
-            # print('  idx = %d, val = %d' % (idx, val))
-
-    # print(rule.inputs)
-    # print(rule.outputs)
-    # print(rule)
-    rules.append(rule)
+        print('  (index = %d) %s[%d]' % (input2idx[input_name], input_name, input_lens[input_name]))
     print()
 
+    # Recognize the outputs.
+    output_lens = {}
+    output2idx = {}
+    output_count = 0
+    pla += '\n.ob '
+    print('The outputs are:')
+    for (output_name, output_len) in ast[3]:
+        if output_name in input_lens:
+            print('Error! Trying to add output \'%s\' but it has already been defined as input.' % output_name)
+            sys.exit(1)
 
-print('--------------------------------------------')
-for rule in rules:
-    # print('Rule:')
-    # print(rule.inputs)
-    # print(rule.outputs)
-    print('%s -> %s' % (rule.InputStr(), rule.OutputStr()))
-    plastr += '\n' + rule.InputStr() + ' ' + rule.OutputStr()
-    # print(rule)
-    # print()
+        if output_name in output_lens:
+            print('Error! Output \'%s\' has already been defined.' % output_name)
+            sys.exit(1)
 
-plastr += '\n.e'
-print('pla:')
-print(plastr)
+        output2idx[output_name] = output_count
 
-plafile = open(name + '.in', 'w')
-plafile.write(plastr)
-plafile.close()
-
-cmd = './espresso.linux -o eqntott ' + name + '.in >' + name + '.out'
-os.system(cmd)
-
-print('\nInput:')
-print(data)
-
-print('\nOutput:')
-verilogfile = 'module ' + name + '(\n'
-for inputvar in inputs:
-    if inputs[inputvar] == 1:
-        verilogfile += '    input wire ' + inputvar + ',\n'
-    else:
-        verilogfile += '    input wire [' + str(inputs[inputvar] - 1) + ':0] ' + inputvar + ',\n'
-
-for outputvar in outputs:
-    if outputs[outputvar] == 1:
-        verilogfile += '    output wire ' + outputvar + ',\n'
-    else:
-        verilogfile += '    output wire [' + str(outputs[outputvar] - 1) + ':0] ' + outputvar + ',\n'
-
-if (verilogfile[-2] == ','):
-    verilogfile = verilogfile[:-2] + '\n);\n\n'
-else:
-    verilogfile += '\n);\n\n'
-
-
-
-plafile = open(name + '.out', 'r')
-need = True;
-for line in plafile:
-    line = line.replace('()', '1')
-    line = line.replace('= ;', '= 0;')
-    if line == '\n':
-        # print(line, end='')
-        need = True
-        pass
-    else:
-        if need:
-            verilogfile += '    assign ' + line
-            need = False
+        if output_len == -1:
+            output_lens[output_name] = 1
+            output_count += 1
+            pla += output_name + ' '
+            verilog_code += '    output wire ' + output_name + ',\n'
         else:
-            verilogfile += '              ' + line
-        # print(line, end='')
+            output_lens[output_name] = output_len
+            output_count += output_len
+            for offset in range(0, output_len):
+                pla += output_name + '[' + str(offset) + ']' + ' '
+            verilog_code += '    output wire [' + str(output_len - 1) + ':0] ' + output_name + ',\n'
 
-# print('f')
-#out = plafile.read()
-#print(out)
+        print('  (index = %d) %s[%d]' % (output2idx[output_name], output_name, output_lens[output_name]))
+    print()
 
-verilogfile += '\nendmodule\n'
-print(verilogfile)
+    pla = '.i ' + str(input_count) + '\n.o ' + str(output_count) + '\n.type fr\n' + pla
+
+    if (verilog_code[-2] == ','):
+        verilog_code = verilog_code[:-2] + '\n);\n\n'
+    else:
+        verilog_code += '\n);\n\n'
+
+    class Rule:
+        def __init__(self):
+            self.inputs = {} # inputidx(int) : str
+            self.outputs = {} # inputidx(int) : str
+
+        def InputStr(self):
+            ret = ''
+            for idx in range(0, input_count):
+                if idx in self.inputs:
+                    ret += str(self.inputs[idx])
+                else:
+                    ret += '-'
+            return ret
+
+        def OutputStr(self):
+            ret = ''
+            for idx in range(0, output_count):
+                if idx in self.outputs:
+                    ret += str(self.outputs[idx])
+                else:
+                    ret += '-'
+            return ret
+
+    rules = []
+
+    print('The rules are:')
+    for (input_specs, output_specs) in ast[4]:
+        rule = Rule()
+        print('----Rule:----')
+        # input_specs = t_rule[0]
+        print('  Inputs:')
+        for ((var, offset), val) in input_specs:
+            print('    %s[%d] = %s' % (var, offset, val))
+            if offset == -1:
+                print('      (len[%s] = %d)' % (var, input_lens[var]))
+                for off in range(0, input_lens[var]):
+                    va = (int(val) & (1 << off)) >> off
+                    idx = input2idx[var] + off
+                    print('      idx = %d, var = %d' % (idx, va))
+                    rule.inputs[idx] = va
+            else:
+                idx = input2idx[var] + offset
+                val = int(val != 0)
+                rule.input_lens[idx] = val
+                print('      idx = %d, val = %d' % (idx, val))
+
+        print('  Outputs:')
+        for ((var, offset), val) in output_specs:
+            print('    %s[%d] = %s' % (var, offset, val))
+            if offset == -1:
+                print('      (len[%s] = %d)' % (var, output_lens[var]))
+                for off in range(0, output_lens[var]):
+                    va = (int(val) & (1 << off)) >> off
+                    idx = output2idx[var] + off
+                    print('      idx = %d, var = %d' % (idx, va))
+                    rule.outputs[idx] = va
+            else:
+                idx = output2idx[var] + offset
+                val = int(val != 0)
+                rule.outputs[idx] = val
+                print('      idx = %d, val = %d' % (idx, val))
+
+        rules.append(rule)
+        print()
+    print()
+
+    print('-' * 80)
+    print(' Rules in pla file:')
+    print('-' * 80)
+    for rule in rules:
+        print('%s : %s' % (rule.InputStr(), rule.OutputStr()))
+        pla += '\n' + rule.InputStr() + ' ' + rule.OutputStr()
+    print()
+
+    print('-' * 80)
+    pla += '\n.e'
+    print(' Final pla file:')
+    print('-' * 80)
+    print(pla)
+    print()
+
+    # Write the pla file.
+    pla_file_handle = open(module_name + '.in', 'w')
+    pla_file_handle.write(pla)
+    pla_file_handle.close()
+
+    # Use the espresso program.
+    cmd = './espresso.linux -o eqntott ' + module_name + '.in >' + module_name + '.out'
+    os.system(cmd)
+
+    # Load the espresso output.
+    pla_file_handle = open(module_name + '.out', 'r')
+    new_assign = True;
+    for line in pla_file_handle:
+        line = line.replace('()', '1')
+        line = line.replace('= ;', '= 0;')
+        line = line.replace('(', '( ')
+        line = line.replace(')', ' )')
+        line = line.replace('&', ' & ')
+        line = line.replace('|', ' | ')
+
+        if line == '\n':
+            new_assign = True
+        else:
+            if new_assign:
+                verilog_code += '    assign ' + line
+                new_assign = False
+            else:
+                verilog_code += '              ' + line
+
+    verilog_code += '\nendmodule\n\n'
+
+    print('-' * 80)
+    print(' Verilog code:')
+    print('-' * 80)
+    print(verilog_code)
+
+    veriloghandle = open(module_name + '.v', 'w')
+    veriloghandle.write(verilog_code)
+    veriloghandle.close()
+    print('-' * 80)
+    print(' Finished! File saved as \'%s\'' % (module_name + '.v'))
+    print('-' * 80)
+    print()
